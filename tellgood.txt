@@ -1,0 +1,10 @@
+def str-good "\[[32m[\[[1;32m%\[[0;32m]\[[0m "
+def str-bad "\[[31m]\[[1;31m%\[[0;31m[\[[0m "
+def str-warn "\[[30m[\[[1;30m%\[[0;30m[\[[0m "
+def notifybad .str-bad swap strcat notify
+def notifygood .str-good swap strcat notify
+def notifywarn .str-warn swap strcat notify
+def tellbad .str-bad swap strcat .tell
+def tellgood .str-good swap strcat .tell
+def tellwarn .str-warn swap strcat .tell
+def tell "me" match swap notify

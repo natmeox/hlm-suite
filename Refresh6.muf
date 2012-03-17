@@ -254,7 +254,7 @@ $else
             "I don't see whom you mean by '%s'." fmtstring .tellbad  ( arrDb )
             continue  ( arrDb )
         then swap pop  ( arrDb db )
-        
+
         swap array_appenditem  ( arrDb )
     repeat  ( arrDb )
 $endif
