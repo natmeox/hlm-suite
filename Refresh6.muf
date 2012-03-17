@@ -4,62 +4,79 @@ i
 ( Refresh6.muf by Natasha@HLM
   Whospecies redux for Fuzzball 6.
 
-  Copyright 2002 Natasha O'Brien. Copyright 2002 Here Lie Monsters.
-  "@view $box/mit" for license information.
-
   Refresh6 uses line formats to completely modularize how it appears. It
   looks up the environment, so area builders can customize its appearance
   if they wish.
 
-  @set lines with the array_fmtstrings syntax like this:
-
-@set #0=_prefs/ws/header:Stat  Name________________  Sex________  Species_______________________________
-@set #0=_prefs/ws/footer:%%----( %[awake]i/%[count]i%.45[room]s }---
-@set #0=_prefs/ws/line:%[@statcolor]s%-4.4[status]s  %[@awakecolor]s%-20.20[@n]s  %[@sexcolor]s%-11.11[sex]s  %[species]s
-
-  The header and footer lines have special codes:
+  There are three line formats: header, line, and footer. See "man
+  fmtstring" for directions on how to write line formats. Refresh6 actually
+  uses array_fmtstrings, so each variable has a namein brackets between the
+  % and the type character. In "header" and "footer", the variables are:
 
   %[awake]i  The number of awake players in the listing.
   %[count]i  The total number of players in the listing.
    %[room]s  The name of the room being listed, prepended with a space. In
              #far listings, this is the null string.
-        %%-  A string of dashes, to fill the line out to 79 characters.
-         \[  An escape code for a Fuzzball 6 ANSI color string.
+ %[region]s  The region of the room being listed. In #far listings, this is
+             #0's region.
+
+  You can also use "%%-", which will be replaced with a string of dashes,
+  and \[ which is parsed to the escape character, suitable for building
+  ANSI color sequences.
 
   Unlike in header and footer lines, the "line" setting *does not* parse
   "\[" into the escape code. You'll have to pre-parse it when you save the
   setting, by saving it with @mpi {store} and your raw ansi colors or {attr}.
 
-  Codes in the "line" format:
-  
-   [@statcolor]  The special color associated with that player's status.
-  [@awakecolor]  "\[[1m" if the player is awake; the reset code otherwise.
-                 This makes sleeping players' lines dim.
-    [@sexcolor]  The special color associated with that player's gender. The
-                 color depends on the first two characters of the player's
-                 "gender" prop; if not set, then the "sex" prop.
-        [@name]  The player's name.
-        [@idle]  How long the player has been idle, eg, "2m", or the null
-                 string if the player is less than two minutes idle.
-           [@n]  The player's name. If the player is asleep or idle, it
+  Variables set in the "line" format:
+
+  %[statcolor]s  The special color associated with that player's status.
+ %[awakecolor]s  "\[[1m" if the player is awake; the reset code otherwise.
+                 Use this to make sleeping players' lines dim.
+   %[sexcolor]s  The special color associated with that player's gender. The
+                 color depends on the player's absolute {%a} pronoun setting:
+                 the color sequences are taken from, eg, _prefs/ws/object/his
+                 and _prefs/ws/object/hers up the environment from the user.
+       %[name]s  The player's name.
+       %[idle]s  How long the player has been idle, eg, "2m", or the null
+                 string if the player is asleep or less than two minutes idle.
+          %[n]s  The player's name. If the player is asleep or idle, it
                  also includes an "[asleep]" or "[2m idle]" tag after.
-       [string]  The value of that property.
+      %[doing]s  The player's @doing, if e has one. Shown as the value of the
+                 _prefs/ws/doing prop from up the environment, with "<my
+                 pretty doing>" replaced by the user's @doing setting.
+     %[status]s  The values of these properties.
+    %[species]s
+        %[sex]s
+
+  Copyright 2002-2003 Natasha O'Brien. Copyright 2002-2003 Here Lie Monsters.
+  "@view $box/mit" for license information.
 )
+$author Natasha O'Brien <mufden@mufden.fuzzball.org>
+$version 1.0
+$note Whospecies redux for Fuzzball 6 with customizable output.
+
 $include $lib/strings
-$include $lib/bits
-$include $lib/away  (added Natasha@HLM 27 December 2002)
+$include $lib/table
+$include $lib/timestr
+$iflib $lib/alias $include $lib/alias $endif
+$iflib $lib/away $include $lib/away $endif  (added Natasha@HLM 27 December 2002)
 
 $def prop_status "status"
-$def prop_far_object "_prefs/ws/object"
 $def prop_dim_sleepers "_prefs/ws/dimsleepers"
 $def prop_doing "_prefs/ws/doing"
 $def prop_idle_time "_prefs/ws/idle"
+$def prop_region "_region"
+$def prop_far_object "_prefs/ws/object"
+$def str_redacted "\[[1;30mredacted"
 
 lvar metadata
 lvar idletime
 lvar doingfmt
 lvar is_afar
-lvar redact
+lvar redacts
+lvar sorthow
+$def rtn-isRedacted? redacts @ over int array_getitem
 
 ( *** utility bits )
 
@@ -84,7 +101,7 @@ lvar redact
 
 : rtn-valid-who  ( db -- bool }  Returns true if this db is a player we can list. )
     dup ok? if
-        dup thing? over "z" flag? and if pop 1 exit then  ( db )
+        dup thing? over "z" flag? and if me @ swap owner ignoring? not exit then  ( db )
         dup player? if me @ swap ignoring? not else pop 0 then  ( bool )
     else pop 0 then  ( bool )
 ;
@@ -92,13 +109,20 @@ lvar redact
 ( *** data getters )
 
 : rtn-data-name name ;
-: rtn-data-idle owner descrleastidle descridle dup idletime @ > if .stimestr else pop "" then ;
+: rtn-data-idle owner descrleastidle dup -1 = if 0 else descridle dup idletime @ > then if stimestr else pop "" then ;
+$def MAXINT 2147483647
+: rtn-data-idlen  ( db -- int )
+    owner  ( db )
+    $iflib $lib/away dup away-away? if pop MAXINT 1 - else $endif  ( db )
+        descrleastidle dup -1 = if pop MAXINT else descridle then  ( int )
+    $iflib $lib/away then $endif  ( int )
+;
 
 : rtn-data-doing  ( db -- str )
-    redact @ if pop "" exit then
+    rtn-isRedacted? if pop "" exit then
     doingfmt @ dup if  ( db strFmt )
         swap "_/do" getpropstr dup if  ( strFmt strDoing )
-            "<my pretty doing>" subst  ( str )
+            "%[doing]s" subst  ( str )
         else pop pop "" then  ( str )
     else pop pop "" then  ( str )
 ;
@@ -109,7 +133,7 @@ lvar redact
 : rtn-data-bright pop "\[[1m" ;
 
 : rtn-data-statcolor  ( db -- str )
-    redact @ if pop "" exit then
+    rtn-isRedacted? if pop "" exit then
     prop_status getpropstr strip  ( strStatus )
     dup if  ( strStatus )
         prog "_stat2color/" rot strcat getpropstr  ( strColor )
@@ -118,7 +142,7 @@ lvar redact
 ;
 
 : rtn-data-sexcolor  ( db -- str }  Gets the character's gender, with color and whatnot. )
-    redact @ if pop "" exit then  ( db )
+    rtn-isRedacted? if pop "" exit then  ( db )
     "_prefs/ws/color/%a" pronoun_sub  ( strProp )
     1 try  ( strProp )
         me @ swap envpropstr swap pop  ( strColor )
@@ -132,11 +156,13 @@ lvar redact
         "\[[0;34m[\[[1;34masleep\[[0;34m]" strcat  ( db str )
     else over "i" flag? if  ( db str )
         "\[[0;31m[\[[1;31mbusy\[[0;31m]" strcat  ( db str )
+$iflib $lib/away
     else over away-away? if  ( db str }  Changed to use $lib/away fn Natasha@HLM 27 December 2002 )
         "\[[0;36m[\[[1;36maway\[[0;36m]" strcat  ( db str )
+$endif
     else over rtn-data-idle dup if  ( str strIdle )
         strip "\[[0;36m[\[[1;36m%s idle\[[0;36m]" fmtstring strcat  ( str )
-    else pop then then then then  ( db str )
+    else pop then then then $iflib $lib/away then $endif  ( db str )
 
     over thing? 3 pick "z" flag? and if
         over owner "\[[0;35m[\[[1;35m%D's\[[0;35m]" fmtstring strcat  ( db str )
@@ -145,21 +171,28 @@ lvar redact
     swap pop  ( str )
 ;
 
-$define dict_atdata {
-    "@n"     'rtn-data-n
-    "@name"  'rtn-data-name
-    "@idle"  'rtn-data-idle
-    "@doing" 'rtn-data-doing
+: rtn-data-status rtn-isRedacted? if pop str_redacted else prop_status getpropstr then ;
+: rtn-data-species rtn-isRedacted? if pop str_redacted else "species" getpropstr then ;
+: rtn-data-sex rtn-isRedacted? if pop str_redacted else "sex" getpropstr then ;
 
-    "@sexcolor"   'rtn-data-sexcolor
-    "@statcolor"  'rtn-data-statcolor
-    "@awakecolor" 'rtn-data-awakecolor
-    "@awakecolor2" 'rtn-data-awakecolor
+$define dict_atdata {
+    "n"     'rtn-data-n
+    "name"  'rtn-data-name
+    "idle"  'rtn-data-idle
+    "doing" 'rtn-data-doing
+
+    "sexcolor"   'rtn-data-sexcolor
+    "statcolor"  'rtn-data-statcolor
+    "awakecolor" 'rtn-data-awakecolor
+
+    "status"  'rtn-data-status
+    "species" 'rtn-data-species
+    "sex"     'rtn-data-sex
 }dict $enddef
 
 ( *** #commands )
 
-: do-help pop pop "_help" rtn-dohelp ;
+: do-help pop pop .showhelp ;
 
 : do-object  ( strY strZ -- )
     pop pop  (  )
@@ -204,11 +237,14 @@ $define dict_atdata {
         exit  (  )
     then atoi  ( int )
     me @ prop_idle_time 3 pick intostr setprop  ( int )
-    .mtimestr "You will only see idle times more than %s." fmtstring .tellgood  (  )
+    mtimestr "You will only see idle times more than %s." fmtstring .tellgood  (  )
 ;
 
 : do-far  ( strY strZ -- arrDb }  Lists all the people in strY, if they allow it. )
     pop  ( strY )
+$iflib $lib/alias
+    me @ swap alias-expand  ( arrDb )
+$else
     " " explode_array  ( arrNames )
     { }list swap  ( arrNames )
     foreach swap pop  ( arrDb strName )
@@ -221,7 +257,8 @@ $define dict_atdata {
         
         swap array_appenditem  ( arrDb )
     repeat  ( arrDb )
-    1 is_afar !
+$endif
+    1 is_afar !  ( arrDb )
 ;
 
 : do-listhere  ( strY strZ -- arrContents }  Returns an array of all the players/objects here whose names start with strY. )
@@ -238,9 +275,44 @@ $define dict_atdata {
     swap pop  ( arrContents' )
 ;
 
+: do-sort  ( strY strZ -- arrContents )
+    pop " " split strip swap strip sorthow !  ( -strY )
+    "" do-listhere  ( arrContents )
+;
+
+: do-setup  ( strY strZ -- )
+    pop pop  (  )
+
+    me @ prog controls not if
+        "You must be a wizard or own the Refresh6 program object to #setup." .tellbad
+        exit
+    then  (  )
+
+    trig "ws;whospec;whospecies" setname
+    trig "_/de" prog "{muf:%d,#help}" fmtstring setprop
+
+    ( Set configuration props. )
+
+    #0 "_prefs/ws/header" "\[[1;37mStat  Name_______\[[0;37m_______\[[1;30m______  \[[37mSex__\[[0;37m___\[[1;30m___  \[[37mSpecies_________\[[0;37m_________\[[1;30m_________\[[0m" setprop
+    #0 "_prefs/ws/line"   "%[awakecolor]s%[statcolor]s%-4.4[status]s\[[0m%[awakecolor]s  \[[37m%-24.24[n]s  %[awakecolor]s%[sexcolor]s%-11.11[sex]s  \[[37m%[species]s%[doing]s" setprop
+    #0 "_prefs/ws/doing"  "\r        \[[1;35mDoing: \[[0;35m%[doing]s" setprop
+    #0 "_prefs/ws/footer" "\[[1;30m-\[[0;37m-\[[1m-( %.20[region]s )-\[[0;37m-\[[1;30m-%%--\[[0;37m-\[[1m-( %[awake]i/%[count]i%.35[room]s )-\[[0;37m-\[[1;30m-\[[0m" setprop
+
+    prog "_stat2color/IC"  "\[[32m" setprop
+    prog "_stat2color/OOC" "\[[33m" setprop
+    prog "_stat2color/WIZ" "\[[36m" setprop
+
+    #0 "_prefs/ws/color/his"  "\[[36m" setprop
+    #0 "_prefs/ws/color/hers" "\[[35m" setprop
+
+    "Action renamed and @described. Default configuration options set." .tellgood
+;
+
 $define dict_commands {
     ""        'do-listhere
     "far"     'do-far
+    "sort"    'do-sort
+    "setup"   'do-setup
     "object"  'do-object
     "!object" 'do-!object
     "bright"  'do-bright
@@ -253,12 +325,13 @@ $define dict_commands {
 
 : main  ( str -- )
     0 is_afar !
+    "" sorthow !
 
     ( Have we entered a command? )
     dup if  ( str )
         STRparse  ( strX strY strZ }  #X y=z )
         0 try
-            dict_commands command @ 5 pick strcat array_getitem  ( strX strY strZ adr )
+            dict_commands 4 pick array_getitem  ( strX strY strZ adr )
         catch endcatch  ( strX strY strZ ? }  ? is either adr or catch's strError )
         dup address? if  ( strX strY strZ adr )
             4 rotate pop  ( strY strZ adr )
@@ -273,7 +346,7 @@ $define dict_commands {
             "I don't understand the command '%s'." fmtstring .tellbad  (  )
             exit  (  )
         then  ( arrWho )
-        { "room" "" "awake" 0 "count" 0 }dict metadata !  ( arrWho )
+        "room" "" "region" #0 prop_region getpropstr 2 array_make_dict metadata !  ( arrWho )
     else pop  (  )
         loc @  ( db )
         dup "d" flag? me @ 3 pick controls not and if  ( db )
@@ -281,94 +354,76 @@ $define dict_commands {
             exit  (  )
         then  ( db )
         " " over name strcat
-        { "room" rot "awake" 0 "count" 0 }dict metadata !  ( db )
+        "room" swap "region" loc @ prop_region envpropstr swap pop 2 array_make_dict metadata !  ( db )
         contents_array  ( arrWho )
     then  ( arrWho )
 
+    ( Are these valid people? )
+    0 array_make_dict redacts !
+    0 var! numAwake
+    0 array_make swap foreach swap pop  ( arrWho db )
+        dup rtn-valid-who if  ( arrWho db )
+
+            dup awake? if numAwake ++ then  ( arrWho db )
+
+            is_afar @ if  ( arrWho db )
+                dup prop_far_object getpropstr .yes? if  ( arrWho db )
+                    1 redacts @ 3 pick int array_setitem redacts !  ( arrWho db )
+                then  ( arrWho db )
+            then  ( arrWho db )
+
+            swap array_appenditem  ( arrWho )
+        else pop then  ( arrWho )
+    repeat  ( arrWho )
+    dup not if
+        "No one to show." .tellbad  ( arrWho )
+        pop exit  (  )
+    then  ( arrWho )
+
+    metadata @  ( arrWho dictMetadata )
+    over array_count swap "count" array_setitem  ( arrWho dictMetadata )
+    numAwake @ swap "awake" array_setitem  ( arrWho dictMetadata )
+    metadata !  ( arrWho )
+    array_reverse var! data  (  )
+
     ( Get the line format. )
-    me @ "line" rtn-get-pref  ( arrWho strFormat )
+    me @ "line" rtn-get-pref  ( str )
+    "\[" "\\[" subst  ( str )
+    var! linefmt  (  )
 
-    ( What data do we need for this format? )
-    dict_atdata  ( arrWho strFormat dict )
+    ( Where are the processors? )
+    dict_atdata  ( dict )
     ( Hey, set some options. )
-    me @ prop_dim_sleepers getpropstr .no? if
-        'rtn-data-bright swap "@awakecolor" array_setitem
-        'rtn-data-bright swap "@awakecolor2" array_setitem
-    then  ( arrWho strFormat dict )
+    me @ prop_dim_sleepers getpropstr .no? if  ( dict )
+        'rtn-data-bright swap "awakecolor" array_setitem
+    then var! processors  (  )
     me @ prop_idle_time getpropstr dup number? if atoi else pop 180 then idletime !
-    me @ prop_doing getpropstr .yes? if loc @ "doing" rtn-get-pref else "" then doingfmt !
+    me @ prop_doing getpropstr .yes? if  (  )
+        loc @ "doing" rtn-get-pref  ( str )
+        "\[" "\\[" subst  ( str )
+        "\r" "\\r" subst  ( str )
+    else "" then doingfmt !  (  )
 
-    var! atdata  ( arrWho strFormat dict )
+    linefmt @ 0 array_make_dict processors @ data @  ( strLinefmt dictHeaders dictProcessors arrData )
+    ( Sort how? )
+    sorthow @ if sorthow @ else me @ "sort" rtn-get-pref then  ( strLinefmt dictHeaders dictProcessors arrData strSorthow )
+    dup if dup "{name|idle|sex|species|status}" smatch if  ( strLinefmt dictHeaders dictProcessors arrData strSorthow )
+        dup "idle" stringcmp not if  ( strLinefmt dictHeaders dictProcessors arrData strSorthow )
+            pop  ( strLinefmt dictHeaders dictProcessors arrData )
+            'rtn-data-idlen rot "idlen" array_setitem swap  ( strLinefmt dictHeaders dictProcessors arrData )
+            "idlen"  ( strLinefmt dictHeaders dictProcessors arrData strSorthow )
+        then  ( strLinefmt dictHeaders dictProcessors arrData strSorthow )
+    else  ( strLinefmt dictHeaders dictProcessors arrData strSorthow )
+        pop ""  ( strLinefmt dictHeaders dictProcessors arrData strSorthow )
+    then then  ( strLinefmt dictHeaders dictProcessors arrData strSorthow )
 
-    { }dict over  ( arrWho strFormat dict str )
-    begin  ( .. dict str )
-        "[]" "" tokensplit ( .. dict strPre str strChar )
-        over over and  ( .. dict strPre str strChar boolSplit )
-    while  ( .. dict strPre str strChar )
-        "[" strcmp if  ( .. dict strPre str )
-            ( Close bracket; what data do we want? )
-            swap  ( .. dict str strPre )
-            dup "@" stringpfx if  ( .. dict str strPre )
-                dup atdata @ swap array_getitem
-            else dup then  ( .. dict str strPre ? )
+    me @ "header" rtn-get-pref  ( strLinefmt dictHeaders dictProcessors listData strSorthow strHeader )
+    rtn-parse-hf .tell  ( strLinefmt dictHeaders dictProcessors listData strSorthow )
 
-            4 rotate rot  ( .. str ? dict strPre )
-            array_setitem  ( .. str dict )
-            swap  ( .. dict str )
+    table-table-sort  (  )
 
-        else swap pop then  ( .. dict str )
-    repeat pop pop pop  ( arrWho strFormat dict )
-
-    ( Compile all the data on all these people. )
-    { }list 4 rotate  ( strFormat dictProto arrData arrWho )
-    foreach swap pop  ( strFormat dictProto arrData db )
-
-        ( Is this an object we can list? )
-        dup rtn-valid-who not if pop continue then  ( strFormat dictProto arrData db )
-        metadata @
-        dup "count" array_getitem 1 + swap "count" array_setitem
-        over awake? if
-            dup "awake" array_getitem 1 + swap "awake" array_setitem
-        then
-        metadata !
-
-        { }dict  ( strFormat dictProto arrData db dictDatum )
-        4 pick foreach  ( strFormat dictProto arrData db dictDatum strKey ?Value )
-            4 pick swap  ( strFormat dictProto arrData db dictDatum strKey db ?Value )
-
-            is_afar @ if  ( strFormat dictProto arrData db dictDatum strKey db strProp )
-                over prop_far_object getpropstr .yes?  ( strFormat dictProto arrData db dictDatum strKey db strProp boolRedact )
-            else 0 then redact !
-
-            dup address? if
-                execute
-            else  ( strFormat dictProto arrData db dictDatum strKey db strProp )
-                redact @ if pop pop "\[[1;30mredacted" else getpropstr then
-            then  ( strFormat dictProto arrData db dictDatum strKey strValue )
-
-            rot rot array_setitem  ( strFormat dictProto arrData db dictDatum' )
-        repeat  ( strFormat dictProto arrData db dictDatum )
-        swap pop  ( strFormat dictProto arrData dictDatum )
-        swap array_appenditem  ( strFormat dictProto arrData )
-    repeat swap pop  ( strFormat arrData )
-
-    ( We have some data, right? )
-    dup array_count 1 < if  ( strFormat arrData )
-        pop pop  (  )
-        "No one to show." .tellbad  (  )
-        exit  (  )
-    then  ( strFormat arrData )
-
-    swap array_fmtstrings  ( arrOutput )
-
-    me @ "header" rtn-get-pref  ( arrOutput strHeader )
-    rtn-parse-hf  ( arrOutput strHeader )
-    swap 0 array_insertitem  ( arrOutput )
-    me @ "footer" rtn-get-pref  ( arrOutput strFooter )
-    rtn-parse-hf  ( arrOutput strHeader )
-    swap array_appenditem  ( arrOutput )
-
-    { me @ }list array_notify  (  )
+    me @ "footer" rtn-get-pref  ( strFooter )
+    rtn-parse-hf .tell  (  )
 ;
 .
 c
@@ -378,9 +433,9 @@ q
 @set refresh6=w
 
 @set #0=_prefs/ws/header:\[[1;37mStat  Name_______\[[0;37m_______\[[1;30m______  \[[37mSex__\[[0;37m___\[[1;30m___  \[[37mSpecies_________\[[0;37m_________\[[1;30m_________\[[0m
-do @set #0=_prefs/ws/line:%[@awakecolor]s%[@statcolor]s%-4.4[status]s  \[[37m%-24.24[@n]s  %[@awakecolor2]s%[@sexcolor]s%-11.11[sex]s  \[[37m%[species]s%[@doing]s
-do @set #0=_prefs/ws/doing:\r        \[[1;35mDoing: \[[0;35m<my pretty doing>
-@set #0=_prefs/ws/footer:\[[1;30m%%--\[[0;37m-\[[1m-( %[awake]i/%[count]i%.45[room]s )-\[[0;37m-\[[1;30m-\[[0m
+@set #0=_prefs/ws/line:%[awakecolor]s%[statcolor]s%-4.4[status]s\[[0m%[awakecolor]s  \[[37m%-24.24[n]s  %[awakecolor]s%[sexcolor]s%-11.11[sex]s  \[[37m%[species]s%[doing]s
+@set #0=_prefs/ws/doing:\r        \[[1;35mDoing: \[[0;35m%[doing]s
+@set #0=_prefs/ws/footer:\[[1;30m-\[[0;37m-\[[1m-( %.20[region]s )-\[[0;37m-\[[1;30m-%%--\[[0;37m-\[[1m-( %[awake]i/%[count]i%.35[room]s )-\[[0;37m-\[[1;30m-\[[0m
 
 @set refr=_stat2color/IC:\[[32m
 @set refr=_stat2color/OOC:\[[33m
@@ -394,15 +449,19 @@ lsedit refr=_help
 .del 1 $
 ws
 ws #far <name> [<name>...]
- 
+ws #sort [none|name|idle|sex|species|status]
+
 Lists the people in the room, their genders, and species. The 'status' command can set your Status field; see 'status #help'. If someone's ws #far shows "redacted," they have used the #object option to hide that data. ws also has several customization options:
- 
+
   #object       Disable display of your data in ws #far lists.
   #doing        Enable display of players' @doings.
   #bright       Disable display of sleepers with dimmer ANSI colors.
   #idle <secs>  Display idle times only if more than <secs> seconds.
- 
+
 The first three options can also be turned off with, for example, 'ws #!object'.
-.format 11=78
-.format 4=78
+
+Players are listed in order of their arrival in the room by default. #sort will order them by the given criterion. You can also '@set me=_prefs/ws/sort:<criterion>' to sort by <criterion> when no #sort is specified; use 'ws #sort none' to list in the normal order of arrival.
+.format 14=78
+.format 12=78
+.format 5=78
 .end
