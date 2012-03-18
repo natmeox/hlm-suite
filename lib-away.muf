@@ -22,7 +22,7 @@ i
   Returns db's current away message, whether or not db is away.
 
 
-  Copyright 2002 Natasha O'Brien. Copyright 2002 Here Lie Monsters MUCK.
+  Copyright 2002 Natasha Snunkmeox. Copyright 2002 Here Lie Monsters MUCK.
   "@view $box/mit" for license information.
 
   Version history
@@ -32,7 +32,7 @@ i
   1.002, 16 March 2004: warn the user if e's away, if run from a global
     _connect.
 )
-$author Natasha O'Brien <mufden@mufden.fuzzball.org>
+$author Natasha Snunkmeox <natmeox@neologasm.org>
 $version 1.002
 $lib-version 1.0
 $note A library for showing when and why players are away.

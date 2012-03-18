@@ -36,7 +36,7 @@ i
   player. The alias may still expand to more than one player, but only the
   first will be returned.
 
-  Copyright 2002 Natasha O'Brien. Copyright 2002 Here Lie Monsters.
+  Copyright 2002 Natasha Snunkmeox. Copyright 2002 Here Lie Monsters.
   "@view $box/mit" for license information.
 
   Version history:
@@ -48,7 +48,7 @@ i
   1.0: original
   1.1, 27 March 2003: added pmatch and .pmatch
 )
-$author Natasha O'Brien <mufden@mufden.fuzzball.org>
+$author Natasha Snunkmeox <natmeox@neologasm.org>
 $version 1.1
 $lib-version 1.1
 $note Library for general #alias feature for multiple programs.

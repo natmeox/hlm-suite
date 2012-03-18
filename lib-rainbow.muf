@@ -4,10 +4,10 @@ i
 ( lib-rainbow.muf by Natasha@HLM
   Adds rainbow color to a string.
 
-  Copyright 2003 Natasha O'Brien. Copyright 2003 Here Lie Monsters.
+  Copyright 2003 Natasha Snunkmeox. Copyright 2003 Here Lie Monsters.
   "@view $box/mit" for license information.
 )
-$author Natasha O'Brien <mufden@mufden.fuzzball.org>
+$author Natasha Snunkmeox <natmeox@neologasm.org>
 $version 1.0
 $note Adds rainbow color to a string.
 : rainbow  ( str -- str' )

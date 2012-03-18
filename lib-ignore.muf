@@ -69,7 +69,7 @@ i
                        array_filter_ignorers.
 
 
-  Copyright 2002-2003 Natasha O'Brien. Copyright 2002-2003 Here Lie Monsters.
+  Copyright 2002-2003 Natasha Snunkmeox. Copyright 2002-2003 Here Lie Monsters.
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files {the "Software"}, to
@@ -90,7 +90,7 @@ i
   IN THE SOFTWARE.
 )
 
-$author Natasha O'Brien <mufden@mufden.fuzzball.org>
+$author Natasha Snunkmeox <natmeox@neologasm.org>
 $version 1.003
 $lib-version 1.003
 $note Easily $includable, program specific #ignore function.

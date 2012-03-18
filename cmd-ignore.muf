@@ -4,10 +4,10 @@ i
 ( cmd-ignore by Natasha@HLM
   Adds to, removes from, and displays your in-server ignore list.
 
-  Copyright 2002 Natasha O'Brien. Copyright 2002 Here Lie Monsters.
+  Copyright 2002 Natasha Snunkmeox. Copyright 2002 Here Lie Monsters.
   "@view $box/mit" for license information.
 )
-$author Natasha O'Brien <mufden@mufden.fuzzball.org>
+$author Natasha Snunkmeox <natmeox@neologasm.org>
 $version 1.0
 $note Adds to, removes from, and displays your in-server ignore list.
 

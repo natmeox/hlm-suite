@@ -6,7 +6,7 @@ i
 
   Forked from cmd-whodoing for Fuzzball 6. Factored table code into $lib/table.
 
-  Copyright 2002 Natasha O'Brien. Copyright 2002 Here Lie Monsters.
+  Copyright 2002 Natasha Snunkmeox. Copyright 2002 Here Lie Monsters.
   "@view $box/mit" for license information.
 
   Version history
@@ -14,7 +14,7 @@ i
     $lib/timestr. Default USE_ATLASTON to on.
   1.002, 25 Feb 2004: handle discons from crashes more gracefully
 )
-$author Natasha O'Brien <mufden@mufden.fuzzball.org>
+$author Natasha Snunkmeox <natmeox@neologasm.org>
 $version 1.002
 $note A Fuzzball 6 laston.
 

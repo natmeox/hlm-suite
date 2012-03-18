@@ -4,7 +4,7 @@ i
 ( cmd-whodoing.muf by Natasha@HLM
   A tastefully colored WHO replacement for Fuzzball 6.
 
-  Copyright 2002 Natasha O'Brien. Copyright 2002 Here Lie Monsters.
+  Copyright 2002 Natasha Snunkmeox. Copyright 2002 Here Lie Monsters.
   "@view $box/mit" for license information.
 
   Version history:
@@ -15,7 +15,7 @@ i
   1.11, 27 March 2003: With #species, show species in normal color.
   1.2, 4 October 2003: Use $lib/wf to get watchfor list
 )
-$author Natasha O'Brien <mufden@mufden.fuzzball.org>
+$author Natasha Snunkmeox <natmeox@neologasm.org>
 $version 1.2
 $note A tastefully colored WHO replacement for Fuzzball 6.
 

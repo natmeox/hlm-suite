@@ -57,10 +57,10 @@ i
   in the natural order of the data list.
 
 
-  Copyright 2002-2003 Natasha O'Brien. Copyright 2002-2003 Here Lie Monsters.
+  Copyright 2002-2003 Natasha Snunkmeox. Copyright 2002-2003 Here Lie Monsters.
   "@view $box/mit" for license information.
 )
-$author Natasha O'Brien <mufden@mufden.fuzzball.org>
+$author Natasha Snunkmeox <natmeox@neologasm.org>
 $version 1.1
 $lib-version 1.1
 $note Library for tabular output (whodoing, laston, whospecies, etc).

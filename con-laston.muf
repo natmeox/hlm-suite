@@ -4,7 +4,7 @@ i
 ( con-laston.muf by Natasha@HLM
   Sets users' @/laston and @/lastoff props appropriately, for use with Natasha's cmd-laston.
 
-  Copyright 2002 Natasha O'Brien. Copyright 2002 Here Lie Monsters.
+  Copyright 2002 Natasha Snunkmeox. Copyright 2002 Here Lie Monsters.
   "@view $box/mit" for license information.
 )
 : main  ( str -- )

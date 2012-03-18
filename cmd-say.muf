@@ -3,10 +3,10 @@
 i
 ( cmd-say.muf by Natasha@HLM
 
-  Copyright 2002-2004 Natasha O'Brien. Copyright 2002-2004 Here Lie Monsters.
-  "@view $box/mit for license information.
+  Copyright 2002-2004 Natasha Snunkmeox. Copyright 2002-2004 Here Lie Monsters.
+  "@view $box/mit" for license information.
 )
-$author Natasha O'Brien <mufden@mufden.fuzzball.org>
+$author Natasha Snunkmeox <natmeox@neologasm.org>
 $note Say for Fuzzball 6.
 $version 1.0
 

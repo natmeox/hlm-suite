@@ -5,12 +5,12 @@ i
   A pose program distilled from Natasha@HLM's say program.
 
   Copyright 2002-2003 Natasha@HLM. Copyright 2002-2003 Here Lie Monsters.
-  "@view $box/mit for license information.
+  "@view $box/mit" for license information.
 )
 $include $lib/ignore
 $include $lib/strings
 
-$author Natasha O'Brien <mufden@mufden.fuzzball.org>
+$author Natasha Snunkmeox <natmeox@neologasm.org>
 $note Pose program with %N posing, $lib/ignore, and color stripping.
 $version 1.002
 

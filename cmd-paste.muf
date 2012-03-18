@@ -4,10 +4,10 @@ i
 ( cmd-paste.muf
   Multi-line message sending program. Based vaguely on Deedlit's.
 
-  Copyright 2004 Natasha O'Brien. Copyright 2004 Here Lie Monsters.
-  "@view $box/mit for license information.
+  Copyright 2004 Natasha Snunkmeox. Copyright 2004 Here Lie Monsters.
+  "@view $box/mit" for license information.
 )
-$author Natasha O'Brien <mufden@mufden.fuzzball.org>
+$author Natasha Snunkmeox <natmeox@neologasm.org>
 $version 1.0
 $note Multi-line message sending program.
 

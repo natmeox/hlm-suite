@@ -17,7 +17,7 @@ i
   v1.1  7  July 2002: added $lib/ignore support.
   v1.2  8 March 2004: optionalized $lib/ignore; cleaned up the generalized functions.
 
-  Copyright 2002-2004 Natasha O'Brien. Copyright 2002-2004 Here Lie Monsters.
+  Copyright 2002-2004 Natasha Snunkmeox. Copyright 2002-2004 Here Lie Monsters.
 
   Permission is hereby granted, free of charge, to any person obtaining a copy
   of this software and associated documentation files {the "Software"}, to
@@ -37,7 +37,7 @@ i
   FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
   IN THE SOFTWARE.
 )
-$author Natasha O'Brien <mufden@mufden.fuzzball.org>
+$author Natasha Snunkmeox <natmeox@neologasm.org>
 $note A simple, free mjoin/msummon program for Fuzzball 6.
 $version 1.002
 

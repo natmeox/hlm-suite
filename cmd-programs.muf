@@ -4,7 +4,7 @@ i
 ( cmd-programs.muf by Natasha@HLM
   A Fuzzball 6 program lister.
 
-  Copyright 2003 Natasha O'Brien. Copyright 2003 Here Lie Monsters.
+  Copyright 2003 Natasha Snunkmeox. Copyright 2003 Here Lie Monsters.
   "@view $box/mit" for license information.
 )
 

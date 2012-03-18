@@ -9,7 +9,7 @@ i
   Version history:
   1.1, 16 March 2003: added rtimestr
 )
-$author Natasha O'Brien <mufden@mufden.fuzzball.org>, Revar
+$author Natasha Snunkmeox <natmeox@neologasm.org>, Revar
 $version 1.1
 $lib-version 1.1
 $note MUF versions of MPI's {stimestr}, {timestr}, and {ltimestr}.
