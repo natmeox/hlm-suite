@@ -9,7 +9,6 @@ i
 )
 $include $lib/ignore
 $include $lib/strings
-$include $lib/bits
 
 $author Natasha O'Brien <mufden@mufden.fuzzball.org>
 $note Pose program with %N posing, $lib/ignore, and color stripping.
@@ -86,7 +85,7 @@ $def prop_nicks "_prefs/say/nicks?"
     else pop pop pop pop then  (  )
 ;
 
-: do-help pop pop "_help" rtn-dohelp ;
+: do-help pop pop .showhelp ;
 : do-ignore pop str_program cmd-ignore-add ;
 : do-unignore pop str_program cmd-ignore-del ;
 
