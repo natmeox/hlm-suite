@@ -8,3 +8,4 @@ def tellbad .str-bad swap strcat .tell
 def tellgood .str-good swap strcat .tell
 def tellwarn .str-warn swap strcat .tell
 def tell "me" match swap notify
+def showhelp prog "_help" array_get_proplist me @ 1 array_make array_notify
