@@ -1,9 +1,9 @@
 @program Cityscape2.muf
 1 9999 d
 i
-( Cityscape2.muf v2.1 by Natasha@SPR
+( Cityscape2.muf v2.5 by Natasha@SPR
 
-  Requires Tjost's QuickSort lib/muf/thing.
+  Requires Tjost's def-quicksort or Natasha's lib/bits.
 
 * To install:
     You'll probably want to make an MPI macro to call the program. @Set this
@@ -122,27 +122,11 @@ i
 @set #0=_msgmacs/cs-labl:{cs-clr:labl,170}
 
 
-  Copyright 2000-2001 Natasha Snunkmeox
+  Copyright 2000-2002 Natasha Snunkmeox.
+  "@view $box/mit" for licensing information.
 
-  Permission is hereby granted, free of charge, to any person obtaining a copy
-  of this software and associated documentation files {the "Software"}, to
-  deal in the Software without restriction, including without limitation the
-  rights to use, copy, modify, merge, publish, distribute, sublicense, and/or
-  sell copies of the Software, and to permit persons to whom the Software is
-  furnished to do so, subject to the following conditions:
 
-  The above copyright notice and this permission notice shall be included in
-  all copies or substantial portions of the Software.
-
-  THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR
-  IMPLIED, INCLUDING BUT NOT LIMITED TO THE WARRANTIES OF MERCHANTABILITY,
-  FITNESS FOR A PARTICULAR PURPOSE AND NONINFRINGEMENT. IN NO EVENT SHALL THE
-  AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
-  LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING
-  FROM, OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS
-  IN THE SOFTWARE.
-)
-( NEW in Cityscape 2.0:
+  NEW in Cityscape 2.0:
 
   To set for paths:
   Preferences:
@@ -152,20 +136,29 @@ i
 
   _prefs/cityscape/useparens:  --  If present, use parentheses when using two exit names. Else use pointed brackets.
   _prefs/cityscape/linelength:<value>  --  Limit lines to a total of <value> characters.
+
+
+  2.1: fixes a bug where Cityscape would error out if there are no exits on the given trigger.
+  2.5: adds lib/bits and Fuzzball 6 support.
 )
-(
-  2.1 fixes a bug where Cityscape would error out if there are no exits on the given trigger.
-)
 
-(Set the line below equal to the dbref of Tjost's quicksort library.)
-$def prog_quicksort #228
+( The dbref of Tjost's def-quicksort. If you're using Natasha's lib/bits, comment this out. )
+($def prog_quicksort #213)
 
-(Uncomment the line below for path support.)
-$def Glow
+( Uncomment this to use Fuzzball 6 primitives. )
+$def fb6
 
+( Uncomment the line below for path support. )
+($def Glow)
 
 $def propdir_temp "_temp/cityscape/"
 $def propdir_pref "_prefs/cityscape/"
+
+
+$ifndef prog_quicksort
+$include $lib/bits
+$include $lib/strings
+$endif
 
 
 (
@@ -180,7 +173,9 @@ $ifdef Glow
 $def ansi_tell me @ swap ansi_notify
 $def ansi? "c" flag?
 $else
+$ifndef fb6
 $include $lib/ansi
+$endif
 $endif
 
 
@@ -204,10 +199,12 @@ $endif
     ( Does it contain a ';'? If not, just use the name as given. )
     dup ";" instr if  ( s )
         ( But it does! Do magic. *nod* )
+        "<" "[" subst
+        ">" "]" subst  ( s' )
         ( Do we do the first one or two names? )
         v_firstn @ not if  ( s )
             dup dup ";" instr strcut pop  ( s s- )
-            dup "<" instr swap "(" instr or  ( s b }  b=whether or not the name has a { or < in it. )
+            dup "<" instr over "[" instr or swap "(" instr or  ( s b }  b=whether or not the name has a { or < in it. )
             if 1 else 2 then  ( s i )
         else v_firstn @ then  ( s i }  i=number of exit names to use )
         1 = if  ( s )
@@ -232,28 +229,44 @@ $endif
 ;
 
 : rtn-color-line  ( s -- s' }  Given a string, color stuff. La. )
-    ( Replace the things that we know where are. )
-    ( Color the first square bracket.. )
-    v_color_squb @ swap strcat  ( s )
-    ( Color the label.. )
-    ( We know that at the beginning is an ansi code, so we can get around a bug in the ansi_strcut in Caspian's lib/ansi library, using normal strcut. )
-    6 strcut v_color_labl @ swap strcat strcat  ( s )
-    ( Color the insides normally.. )
-    4 v_maxlabellength @ + ansi_strcut v_color_norm @ swap strcat strcat  ( s )
-    ( And color the last bracket. )
-    dup strlen 1 - strcut v_color_squb @ swap strcat strcat  ( s )
+$ifdef fb6
+    dup strlen 1 - strcut  ( s- -s )
+    v_color_squb @ textattr strcat  ( s' )
 
-    ( Now color the variable stuff: the angly brackets. )
-    v_color_angb @ "<" strcat v_color_main @ strcat "<" subst
-    v_color_angb @ ">" strcat v_color_norm @ strcat ">" subst
-    v_color_angb @ "(" strcat v_color_main @ strcat "(" subst
-    v_color_angb @ ")" strcat v_color_norm @ strcat ")" subst
+    4 v_maxlabellength @ + strcut  ( s- -s )
+    v_color_norm @ textattr strcat  ( s' )
+
+    2 strcut  ( s- -s )
+    v_color_labl @ textattr strcat  ( s' )
+
+    v_color_squb @ textattr  ( s' )
+
+    ( Now color the the angly brackets. )
+    { swap  ( { s' )
+    begin  ( { .. s' )
+            "<>()" "" tokensplit  ( { .. s- -s strChar )
+        dup while  ( { .. s- -s strChar )
+            dup "[<(]" smatch if v_color_main else v_color_norm then  ( { .. s- -s strChar var )
+        swap v_color_angb @ textattr  ( { .. s- -s var strChar' )
+        -3 rotate  ( { .. s- strChar' -s var )
+        @ textattr  ( { .. s- strChar' -s' )
+    repeat  ( { .. s' )
+    }list "" array_join
+
+    .tell
+$else
+    erm, put this part back
+$endif
 ;
 
-: rtn-sortbylength  ( x1 x2 -- i }  Given two strings, return 1 if x2 is longer. This bubbles the longer names up toward the front of the display. )
+$ifdef prog_quicksort
+: rtn-sortbylength  ( x1 x2 -- b }  Given two strings, return 1 if x2 is longer. This bubbles the longer names up toward the front of the display. )
     strlen swap strlen  ( i2 i1 )
     >  ( i )
 ;
+$else
+: rtn-strlen strlen intostr 5 STRright ;
+$endif
 : rtn-displaymarker  ( s -- }  Given a 'temp/<marker>' prop, format and display all the exit names in that marker. )
     v_currentprop !  (  )
 
@@ -269,7 +282,11 @@ $endif
     1 - repeat pop v_howmanyexits @  ( sn..s1 n )
 
     ( Sort. )
+$ifdef prog_quicksort
     'rtn-sortbylength prog_quicksort call  ( sn..s1 n )
+$else
+    'rtn-strlen rtn-othersort  ( sn..s1 n )
+$endif
 
     ( Display. )
     ( Start with a bracket. )
@@ -299,8 +316,7 @@ $endif
 
             ( Cap this line off. )
             v_string @ "                                                            " strcat v_linelength @ 1 - strcut pop "]" strcat  ( sn..s3 n s2 s! )
-            rtn-color-line  ( sn..s3 n s2 s!' )
-            ansi_tell  ( sn..s3 n s2 )
+            rtn-color-line  ( sn..s3 n s2 )
 
             ( Start a new line to put s2 in. )
             "[                              " v_maxlabellength @ 4 + strcut pop  ( sn..s3 n s2 s! }  s!=the new v_string )
@@ -314,8 +330,7 @@ $endif
 
     ( OK, cap this last v_string off and notify. )
     v_string @ "                                                            " strcat v_linelength @ 1 - strcut pop "]" strcat  ( s! )
-    rtn-color-line  ( s!' )
-    ansi_tell  (  )
+    rtn-color-line  (  )
 ;
 
 : main  ( -- )
@@ -326,11 +341,15 @@ $endif
     ( And how long should a line be, anyhow? )
     "linelength" getprefstr atoi dup not if pop 70 then v_linelength !
     ( And what colors do we use? )
-    me @ "_obvex/squb" envpropstr swap pop dup if "~&" swap strcat else pop "~&100" then v_color_squb !
-    me @ "_obvex/labl" envpropstr swap pop dup if "~&" swap strcat else pop "~&170" then v_color_labl !
-    me @ "_obvex/angb" envpropstr swap pop dup if "~&" swap strcat else pop "~&010" then v_color_angb !
-    me @ "_obvex/main" envpropstr swap pop dup if "~&" swap strcat else pop "~&170" then v_color_main !
-    me @ "_obvex/norm" envpropstr swap pop dup if "~&" swap strcat else pop "~&070" then v_color_norm !
+$ifdef fb6
+    me @ "_obvex/squb" envpropstr swap pop dup not if pop "bold,black" then v_color_squb !
+    me @ "_obvex/labl" envpropstr swap pop dup not if pop "bold,white" then v_color_labl !
+    me @ "_obvex/angb" envpropstr swap pop dup not if pop "reset,red" then v_color_angb !
+    me @ "_obvex/main" envpropstr swap pop dup not if pop "bold,white" then v_color_main !
+    me @ "_obvex/norm" envpropstr swap pop dup not if pop "reset,white" then v_color_norm !
+$else
+    erm, put this part back too
+$endif
 
 
     ( Do we actually have any exits to display? )
@@ -345,13 +364,9 @@ $endif
     not if  ( d )
         pop  (  )
         ( Put together the 'no exits' line. )
-        v_color_squb @ "[ " strcat v_color_labl @ strcat "Obvious Exits:" strcat v_color_norm @ strcat " None.                                                                      " strcat  ( s )
-        ( Make it the correct length. )
-        v_linelength @ 1 - ansi_strcut pop  ( s )
-        ( Add the closing square bracket. )
-        v_color_squb @ strcat "]" strcat  ( s )
-        ( Tell. )
-        ansi_tell
+        13 v_maxlabellength !
+        "[ Obvious Exits: None.                                                                      ]"
+        rtn-color-line
         exit
     then  ( d }  d=first exit )
 
@@ -374,49 +389,51 @@ $endif
 
     ( OK, load up all the exit names. )
     begin dup ok? while  ( d )
+        dup "d" flag? if dup "_obvex/show?" getpropstr .yes? else 1 then if
 
-        ( Load up this exit's name. )
-        ( Are there multiple names in the exit's name? If not, we do nothing to the name. )
-        dup name  ( d s )
-        rtn-getexitname  ( d s' )
+            ( Load up this exit's name. )
+            ( Are there multiple names in the exit's name? If not, we do nothing to the name. )
+            dup name  ( d s )
+            rtn-getexitname  ( d s' )
 
-        ( Find the marker this exit should be listed under, since we have to save the exit name by marker to separate and alphabetize correctly. )
-        ( Get the marker. )
-        over "_obvex/marker" getpropstr  ( d s' sm }  sm=marker this exit should be saved under )
-        ( If it exists, postpend a '/'. )
-        dup if "/" swap strcat then  ( d s' sm )
+            ( Find the marker this exit should be listed under, since we have to save the exit name by marker to separate and alphabetize correctly. )
+            ( Get the marker. )
+            over "_obvex/marker" getpropstr  ( d s' sm }  sm=marker this exit should be saved under )
+            ( If it exists, postpend a '/'. )
+            dup if "/" swap strcat then  ( d s' sm )
 
-        ( Save this name. )
-        me @ v_tempprop @  ( d s' sm dt st }  dt/st=temporary prop to put this exit name in )
-        3 pick strcat  ( d s' /sm dt st )
-        "/exitname#" strcat  ( d s' /sm dt st )
-        ( Get the number of exits we've got set there now. )
-        over over over over getpropstr atoi  ( d s' /sm dt st dt st ie }  ie=number of exits under this marker so far )
+            ( Save this name. )
+            me @ v_tempprop @  ( d s' sm dt st }  dt/st=temporary prop to put this exit name in )
+            3 pick strcat  ( d s' /sm dt st )
+            "/exitname#" strcat  ( d s' /sm dt st )
+            ( Get the number of exits we've got set there now. )
+            over over over over getpropstr atoi  ( d s' /sm dt st dt st ie }  ie=number of exits under this marker so far )
 
-        ( Wait! We need to keep track of the longest label. Let's do that while we have this marker available. )
-        ( Is ie 0? If not, we already accounted for this label. )
-        dup not if  ( d s' /sm dt st dt st ie )
-            ( Yeah, ie==0. Load its label. )
-            trigger @ "_obvex/name"  ( d s' /sm dt st dt st ie dl sl )
-            8 rotate strcat  ( d s' dt st dt st ie dl sl' )
-            envpropstr swap pop  ( d s' dt st dt st ie sl" }  sl"=this marker's label )
-            ( How long is the label? )
-            dup if strlen else pop 13 then  ( d s' dt st dt st ie il }  il=length of this marker's label )
-            ( Is that longer than the recorded maximum? )
-            dup v_maxlabellength @ > if v_maxlabellength ! else pop then  ( d s' dt st dt st ie )
-        else 6 rotate pop then  ( sp s' dt st' dt st' ie )
+            ( Wait! We need to keep track of the longest label. Let's do that while we have this marker available. )
+            ( Is ie 0? If not, we already accounted for this label. )
+            dup not if  ( d s' /sm dt st dt st ie )
+                ( Yeah, ie==0. Load its label. )
+                trigger @ "_obvex/name"  ( d s' /sm dt st dt st ie dl sl )
+                8 rotate strcat  ( d s' dt st dt st ie dl sl' )
+                envpropstr swap pop  ( d s' dt st dt st ie sl" }  sl"=this marker's label )
+                ( How long is the label? )
+                dup if strlen else pop 13 then  ( d s' dt st dt st ie il }  il=length of this marker's label )
+                ( Is that longer than the recorded maximum? )
+                dup v_maxlabellength @ > if v_maxlabellength ! else pop then  ( d s' dt st dt st ie )
+            else 6 rotate pop then  ( sp s' dt st' dt st' ie )
 
-        ( Increment it. )
-        1 +  ( d s' dt st dt st ie' )
-        ( Save it for later. )
-        dup -4 rotate  ( d s' dt st ie' dt st ie' )
-        ( Save the new number of exits. )
-        intostr setprop  ( d s' dt st ie' )
-        ( Add the new number to st, so we get the prop to put the exit name into. )
-        intostr "/" swap strcat strcat  ( d s' dt st' )
-        ( Set the name to that prop. )
-        rot setprop  ( d )
+            ( Increment it. )
+            1 +  ( d s' dt st dt st ie' )
+            ( Save it for later. )
+            dup -4 rotate  ( d s' dt st ie' dt st ie' )
+            ( Save the new number of exits. )
+            intostr setprop  ( d s' dt st ie' )
+            ( Add the new number to st, so we get the prop to put the exit name into. )
+            intostr "/" swap strcat strcat  ( d s' dt st' )
+            ( Set the name to that prop. )
+            rot setprop  ( d )
 
+        then
     next repeat pop  (  )
 
 
