@@ -86,7 +86,8 @@ i
 
   Version history
   1.0, 30 Aug 2002: Possibly something like the first version.
-  2.0, 26 Jan 2019: Require Fuzzball 6.
+  2.0, 26 Jan 2019: Required Fuzzball 6.
+                    Reimplemented rtn-othersort using arrays.
 )
 $author Natasha Snunkmeox <natmeox@neologasm.org>
 $version 2.0
@@ -98,20 +99,9 @@ $def ref_lib-strings #179
 ( Comment this line out if you are not able to give this library an M3 bit. )
 $def HAVE_M3 ()
 
-( Uncomment this line to use $lib/edit for sorting, rather than the built-in method that requires an M3. )
-($def USE_LIB_EDIT ()
-
 ( Uncomment if the MUCK doesn't have standard stoplights. )
 $undef OFFER_STOPLIGHTS
 
-
-$ifndef HAVE_M3
-$def USE_LIB_EDIT
-$endif
-
-$ifdef USE_LIB_EDIT
-$include $lib/edit
-$endif
 
 $include $lib/case
 
@@ -248,76 +238,28 @@ $endif
     else pop "" then  ( [db] strCmd )
 ;
 
-lvar v_sid
 lvar v_addy
-: rtn-safeprop  ( strProp -- strProp' }  Turn strProp into an actual settable property name. )
-    dup ":" instr over "/" instr or if
-        ";" ":" subst
-        "\\" "/" subst
-    then  ( strProp' )
-;
-: rtn-othersort  ( ?n..?1 intN addy -- ?n'..?1' intN }  Converts the given data {the list} with the given function {addy} and sorts them according to nextprop rules and returns them in the new order. )
-
+: rtn-othersort  ( ?n..?1 intN addy -- ?n'..?1' intN }  Sorts the given stackrange by the results of running `addy` on each item and returns them in the new order. )
     v_addy !
+    array_make  ( ary )
 
-    ( Generate a session id. )
-    "_sort/" caller intostr strcat random intostr strcat "/" strcat v_sid !  ( ?n..?1 intN )
+    -1 swap foreach rot pop  ( ... intN ?val )
+        { swap  ( ... intN marker ?val )
+        "value" swap  ( ... intN marker strValue ?val )
+        "key" over  ( ... intN marker strValue ?val strKey ?val )
+        v_addy @ execute  ( ... intN marker strValue ?val strKey ?Key )
+        }dict  ( ... intN dict1 )
+        swap  ( ... dict1 intN )
+    repeat 1 +  ( dictN..dict1 intN )
+    array_make  ( aryDicts )
 
-$ifdef USE_LIB_EDIT
-    ( Save an intN for the list we're making of property names. )
-    dup  ( ?n..?1 intN intN )
-    -2 over - rotate  ( intX ?n..?1 intN )
-$endif
+    SORTTYPE_CASE_ASCEND "key" array_sort_indexed  ( arrSorted )
 
-    ( Bury. )
-    begin dup while  ( [intX] ?n..?1 intN )
-        prog v_sid @  ( [intX] ?n..?1 intN dbProg strProp- )
-        4 rotate  ( [intX] ?n..?2 intN dbProg strProp- ?1 )
-        dup v_addy @ execute  ( [intX] ?n..?2 intN dbProg strProp- ?1 -strProp )
-        rtn-safeprop  ( [intX] ?n..?2 intN dbProg strProp- ?1 -strProp )
-        swap -3 rotate strcat  ( [intX] ?n..?2 intN dbProg ?1 strProp )
-
-        ( Collision? )
-        begin  ( [intX] ?n..?2 intN dbProg ?1 strProp )
-            3 pick over getprop dup int? not if pop 1 then  ( [intX] ?n..?2 intN dbProg ?1 strProp boolSet )
-        while  ( [intX] ?n..?2 intN dbProg ?1 strProp )
-            "x" strcat  ( [intX] ?n..?1 intN dbProg ?2 strProp )
-        repeat  ( [intX] ?n..?2 intN dbProg ?1 strProp )
-
-$ifdef USE_LIB_EDIT
-        dup  ( intX ?n..?2 intN dbProg ?1 strProp strProp )
-        -5 6 pick - rotate  ( str1 intX ?n..?1 intN dbProg ?1 strProp )
-$endif
-        swap setprop  ( [str1 intX] ?n..?1 intN )
-    1 - repeat pop  ( [strX..str1 intX] )
-
-$ifdef USE_LIB_EDIT
-    ( Sort. )
-    1 0 EDITsort  ( strN..str1 intN }  This is the 'X' list above--no magic here. )
-
-    ( Disinter. )
-    0 -2 3 pick - rotate  ( intX strN..str1 intN )
-    begin dup while  ( intX strN..str1 intN )
-        ( Get the next item. )
-        prog rot getprop  ( intX strN..str2 intN ?1 )
-        ( Put it in the right place. )
-        -2 3 pick - rotate  ( ?1 intX strN..str2 intN }  intN hasn't decremented yet, so ?1 is still counted as one of the N items--hence -2, not -3. )
-        ( Increment intX. )
-        dup 1 + rotate  ( ?1 strN..str2 intN intX )
-        1 +  ( ?1 strN..str2 intN intX )
-        -1 3 pick - rotate  ( ?1 intX strN..str2 intN )
-    1 - repeat pop  ( ?x..?1 intX )
-$else
-    ( Disinter. )
-    0 v_addy !
-    v_sid @ begin prog swap nextprop dup while  ( strProp )
-        v_addy @ 1 + v_addy !  ( strProp )
-        prog over getprop  ( strProp ?1 )
-        -1 v_addy @ - rotate  ( ?1 strProp )
-    repeat pop  ( ?n..?1 )
-
-    v_addy @  ( ?n..?1 intN )
-$endif
+    -1 swap foreach  ( ... intCount intIndex dict )
+        rot pop  ( ... intCount' dict }  This iteration's index is the new total count. )
+        "value" array_getitem  ( ... intCount' ?val )
+        swap  ( ... ?val intCount' )
+    repeat 1 +  ( ?n'..?1' intN )
 ;
 
 : rtn-commas  ( arr -- db )
