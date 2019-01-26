@@ -83,7 +83,15 @@ i
   long ago that was. Algorithm taken from SC-Track Roundup's Date.py:Interval
   object.
 
+
+  Version history
+  1.0, 30 Aug 2002: Possibly something like the first version.
+  2.0, 26 Jan 2019: Require Fuzzball 6.
 )
+$author Natasha Snunkmeox <natmeox@neologasm.org>
+$version 2.0
+$lib-version 2.0
+$note Common code helpers for hlm-suite programs.
 
 $def ref_lib-strings #179
 
@@ -92,9 +100,6 @@ $def HAVE_M3 ()
 
 ( Uncomment this line to use $lib/edit for sorting, rather than the built-in method that requires an M3. )
 ($def USE_LIB_EDIT ()
-
-( Uncomment this line if you're on a Fuzzball 6 MUCK and can use the Fuzzball 6 words. )
-$def fb6 ()
 
 ( Uncomment if the MUCK doesn't have standard stoplights. )
 $undef OFFER_STOPLIGHTS
@@ -315,7 +320,6 @@ $else
 $endif
 ;
 
-$ifdef fb6
 : rtn-commas  ( arr -- db )
     dup array_count 1 = if  ( arr )
         dup array_first array_getitem name  ( str )
@@ -329,7 +333,6 @@ $ifdef fb6
         " and " strcat swap name strcat  ( str )
     then  ( str )
 ;
-$endif
 
 : rtn-rtimestr  ( int -- str )
     dup case  ( intSince )
@@ -371,10 +374,8 @@ PUBLIC rtn-dohelp
 PUBLIC rtn-dispatch
 PUBLIC rtn-match
 PUBLIC rtn-othersort
-$ifdef fb6
 PUBLIC rtn-commas
 PUBLIC rtn-rtimestr
-$endif
 $ifdef OFFER_STOPLIGHTS
 PUBLIC str-good
 PUBLIC str-bad
