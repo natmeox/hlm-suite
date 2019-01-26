@@ -88,13 +88,13 @@ i
   1.0, 30 Aug 2002: Possibly something like the first version.
   2.0, 26 Jan 2019: Required Fuzzball 6.
                     Reimplemented rtn-othersort using arrays.
+                    Reimplemented rtn-pad* using fmtstring {as modern
+                    $lib/strings does anyway}.
 )
 $author Natasha Snunkmeox <natmeox@neologasm.org>
 $version 2.0
 $lib-version 2.0
 $note Common code helpers for hlm-suite programs.
-
-$def ref_lib-strings #179
 
 ( Comment this line out if you are not able to give this library an M3 bit. )
 $def HAVE_M3 ()
@@ -109,21 +109,21 @@ $include $lib/case
     dup 3 pick strlen < if  ( str int )
         strcut pop  ( str' )
     else
-        ref_lib-strings "STRleft" call  ( str' )
+        "%-*s" fmtstring  ( str' )
     then  ( str' )
 ;
 : rtn-padright  ( str int -- str' )
     dup 3 pick strlen < if  ( str int )
         strcut pop  ( str' )
     else
-        ref_lib-strings "STRright" call  ( str' )
+        "%*s" fmtstring  ( str' )
     then  ( str' )
 ;
 : rtn-padcenter  ( str int -- str' )
     dup 3 pick strlen < if  ( str int )
         strcut pop  ( str' )
     else
-        ref_lib-strings "STRcenter" call  ( str' )
+        "%|*s" fmtstring  ( str' )
     then  ( str' )
 ;
 
