@@ -90,6 +90,7 @@ i
                     Reimplemented rtn-othersort using arrays.
                     Reimplemented rtn-pad* using fmtstring {as modern
                     $lib/strings does anyway}.
+                    Removed str-good & str-bad stoplight words.
 )
 $author Natasha Snunkmeox <natmeox@neologasm.org>
 $version 2.0
@@ -98,9 +99,6 @@ $note Common code helpers for hlm-suite programs.
 
 ( Comment this line out if you are not able to give this library an M3 bit. )
 $def HAVE_M3 ()
-
-( Uncomment if the MUCK doesn't have standard stoplights. )
-$undef OFFER_STOPLIGHTS
 
 
 $include $lib/case
@@ -300,11 +298,6 @@ lvar v_addy
     endcase  ( str )
 ;
 
-$ifdef OFFER_STOPLIGHTS
-: str-good "[%] " ;
-: str-bad "]%[ " ;
-$endif
-
 : main 1 pop ;
 PUBLIC rtn-padleft
 PUBLIC rtn-padright
@@ -318,10 +311,6 @@ PUBLIC rtn-match
 PUBLIC rtn-othersort
 PUBLIC rtn-commas
 PUBLIC rtn-rtimestr
-$ifdef OFFER_STOPLIGHTS
-PUBLIC str-good
-PUBLIC str-bad
-$endif
 .
 c
 q
