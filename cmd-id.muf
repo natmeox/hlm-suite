@@ -16,6 +16,9 @@ $version 1.1
 $note A simple object describer.
 
 $include $lib/bits
+$ifnlib $lib/stoplights
+    $def .tellgood .tell
+$endif
 
 : rtn-getType  ( db -- str }  Returns a string identifying the object type of db. )
     dup ok? not if pop "garbage"  exit then  ( db )
