@@ -91,14 +91,13 @@ i
                     Reimplemented rtn-pad* using fmtstring {as modern
                     $lib/strings does anyway}.
                     Removed str-good & str-bad stoplight words.
+                    Finds ourselves whether rtn-dohelp can parse MPI
+                    rather than having to be configured.
 )
 $author Natasha Snunkmeox <natmeox@neologasm.org>
 $version 2.0
 $lib-version 2.0
 $note Common code helpers for hlm-suite programs.
-
-( Comment this line out if you are not able to give this library an M3 bit. )
-$def HAVE_M3 ()
 
 
 $include $lib/case
@@ -201,16 +200,17 @@ lvar v_addy
 ;
 
 lvar v_dir
+lvar v_loadprop
+: loadprop-parse  ( db str -- str )  "(#help)" 1 parseprop ;
+: loadprop-get    ( db str -- str )  getpropstr ;
 : rtn-dohelp  ( str -- }  Displays help on the calling program in lsedit list str. )
+    prog mlevel 3 >= if 'loadprop-parse else 'loadprop-get then v_loadprop !
+
     "#" strcat dup "/" strcat v_dir !  ( strProp )
     caller swap getpropstr atoi 1  ( intLines intCur )
     begin over over >= while  ( intLines intCur )
         caller v_dir @ 3 pick intostr strcat  ( intLines intCur dbClr strLineProp )
-$ifdef HAVE_M3
-        "(#help)" 1 parseprop  ( intLines intCur strLine )
-$else
-        getpropstr  ( intLines intCur strLine )
-$endif
+        v_loadprop @ execute  ( intLines intCur strLine )
         .tell  ( intLines intCur )
     1 + repeat pop pop  (  )
 ;
