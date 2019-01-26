@@ -8,17 +8,17 @@ $include $lib/bits
 $include $lib/syvel-funcs
 $def .color-unparseobj obj-color
 : main  ( str -- }  Print out the unparseobj for the given string. )
-	dup strip "#help" stringcmp not if "_help" rtn-dohelp exit then  ( str )
+    dup strip "#help" stringcmp not if "_help" rtn-dohelp exit then  ( str )
 
-	dup if match else pop me @ then  ( db )
-	dup obj-color  ( db str )
-	over ok? if  ( db str )
-		over owner swap "%s     Owner: %D" fmtstring  ( db str )
-		over exit? if  ( db str )
-			over getlink obj-color swap "%s     Link: %s" fmtstring  ( db str )
-		then  ( db str )
-	then  ( db str )
-	.tellgood pop  (  )
+    dup if match else pop me @ then  ( db )
+    dup obj-color  ( db str )
+    over ok? if  ( db str )
+        over owner swap "%s     Owner: %D" fmtstring  ( db str )
+        over exit? if  ( db str )
+            over getlink obj-color swap "%s     Link: %s" fmtstring  ( db str )
+        then  ( db str )
+    then  ( db str )
+    .tellgood pop  (  )
 ;
 .
 c
