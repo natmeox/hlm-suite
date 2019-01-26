@@ -3,7 +3,17 @@
 i
 ( cmd-id.muf by Natasha@HLM
   A simple object describer.
+
+  Copyright 2003 Natasha Snunkmeox. Copyright 2003 Here Lie Monsters.
+  "@view $box/mit" for license information.
+
+  Version history
+  1.0, 25 Oct 2003: First version.
 )
+$author Natasha Snunkmeox <natmeox@neologasm.org>
+$version 1.0
+$note A simple object describer.
+
 $include $lib/bits
 $include $lib/syvel-funcs
 $def .color-unparseobj obj-color
