@@ -311,6 +311,19 @@ PUBLIC rtn-match
 PUBLIC rtn-othersort
 PUBLIC rtn-commas
 PUBLIC rtn-rtimestr
+
+$libdef rtn-padleft
+$libdef rtn-padright
+$libdef rtn-padcenter
+$libdef rtn-substpct
+$libdef rtn-1explode
+$libdef rtn-substfirst
+$libdef rtn-dohelp
+$libdef rtn-dispatch
+$libdef rtn-match
+$libdef rtn-othersort
+$libdef rtn-commas
+$libdef rtn-rtimestr
 .
 c
 q
