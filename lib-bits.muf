@@ -93,6 +93,8 @@ i
                     Removed str-good & str-bad stoplight words.
                     Finds ourselves whether rtn-dohelp can parse MPI
                     rather than having to be configured.
+                    Made $lib/case optional, as Fuzzball 7 provides
+                    those words without a library.
 )
 $author Natasha Snunkmeox <natmeox@neologasm.org>
 $version 2.0
@@ -100,7 +102,10 @@ $lib-version 2.0
 $note Common code helpers for hlm-suite programs.
 
 
-$include $lib/case
+( Fuzzball 7 has case primitives, so the library is not required. )
+$iflib $lib/case
+    $include $lib/case
+$endif
 
 : rtn-padleft  ( str int -- str' )
     dup 3 pick strlen < if  ( str int )
